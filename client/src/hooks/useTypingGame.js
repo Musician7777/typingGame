@@ -18,6 +18,9 @@ export function useTypingGame() {
   const [isFinished, setIsFinished] = useState(false);
 
   const intervalRef = useRef(null);
+  // Refs to avoid stale values inside setInterval
+  const startTimeRef = useRef(null);
+  const userInputRef = useRef("");
 
   useEffect(() => {
     resetGame();
@@ -27,9 +30,11 @@ export function useTypingGame() {
     const newText = generateWords(50).join(" ");
     setText(newText);
     setUserInput("");
+    userInputRef.current = "";
     setCurrentIndex(0);
     setIsActive(false);
     setStartTime(null);
+    startTimeRef.current = null;
     setEndTime(null);
     setWpm(0);
     setAccuracy(100);
@@ -44,16 +49,22 @@ export function useTypingGame() {
   const startGame = useCallback(() => {
     if (!isActive && !isFinished) {
       setIsActive(true);
-      setStartTime(Date.now());
+      const startedAt = Date.now();
+      setStartTime(startedAt);
+      startTimeRef.current = startedAt;
 
       intervalRef.current = setInterval(() => {
         const now = Date.now();
-        const timeElapsed = (now - (startTime || now)) / 1000;
-        const currentWpm = calculateWPM(userInput.length, timeElapsed);
+        const base = startTimeRef.current || now; // if not started, avoid NaN
+        const timeElapsed = (now - base) / 1000;
+        const currentWpm = calculateWPM(
+          userInputRef.current.length,
+          timeElapsed
+        );
         setWpm(currentWpm);
       }, 100);
     }
-  }, [isActive, isFinished, startTime, userInput.length]);
+  }, [isActive, isFinished]);
 
   const handleInput = useCallback(
     (value) => {
@@ -64,6 +75,7 @@ export function useTypingGame() {
       }
 
       setUserInput(value);
+      userInputRef.current = value;
       setCurrentIndex(value.length);
 
       // Calculate errors
@@ -91,12 +103,13 @@ export function useTypingGame() {
         }
 
         // Final calculations
-        const timeElapsed = (Date.now() - startTime) / 1000;
+        const base = startTimeRef.current || Date.now();
+        const timeElapsed = (Date.now() - base) / 1000;
         const finalWpm = calculateWPM(text.length, timeElapsed);
         setWpm(finalWpm);
       }
     },
-    [isFinished, isActive, text, startGame, startTime]
+    [isFinished, isActive, text, startGame]
   );
 
   useEffect(() => {

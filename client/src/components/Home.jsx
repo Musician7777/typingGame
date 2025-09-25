@@ -46,9 +46,6 @@ export default function Home() {
     >
       {/* Hero Section */}
       <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <Keyboard size={48} style={{ color: "var(--primary)" }} />
-        </div>
         <h1
           style={{
             fontSize: "2.5rem",
@@ -100,7 +97,10 @@ export default function Home() {
           }}
         >
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-3"
+              style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+            >
               <div
                 style={{
                   padding: "0.75rem",
@@ -132,7 +132,15 @@ export default function Home() {
 
         {/* Multiplayer Section */}
         <div className="card" style={{ padding: "2rem" }}>
-          <div className="flex items-center gap-3 mb-4">
+          <div
+            className="flex items-center gap-3 mb-4"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              marginBottom: "1rem",
+            }}
+          >
             <div
               style={{
                 padding: "0.75rem",
@@ -195,7 +203,7 @@ export default function Home() {
       </div>
 
       {/* Features */}
-      <div className="card" style={{ padding: "1.5rem" }}>
+      {/* <div className="card" style={{ padding: "1.5rem" }}>
         <h3
           style={{
             margin: "0 0 1rem 0",
@@ -230,7 +238,7 @@ export default function Home() {
             <div className="text-sm">Live Rankings</div>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

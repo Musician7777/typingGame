@@ -392,9 +392,6 @@ export default function MultiplayerRoom({ roomId }) {
                 Start typing directly! Press <strong>Backspace</strong> to
                 correct mistakes.
               </div>
-              <div className="text-xs text-muted mt-2">
-                Current input: "{userInput}"
-              </div>
             </div>
           )}
 

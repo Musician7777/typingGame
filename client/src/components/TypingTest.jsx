@@ -195,9 +195,6 @@ export default function TypingTest() {
             Start typing directly! Press <strong>Backspace</strong> to correct
             mistakes, <strong>Tab</strong> to restart.
           </div>
-          <div className="text-xs text-muted mt-2">
-            Current input: "{userInput}"
-          </div>
         </div>
       ) : (
         <div className="card" style={{ padding: "1rem", textAlign: "center" }}>
