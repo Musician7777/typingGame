@@ -160,33 +160,91 @@ export default function TypingTest() {
             </span>
           ))}
         </div>
+      </div>
 
-        {isFinished && (
+      {/* Completion Results */}
+      {isFinished && (
+        <div
+          className="card"
+          style={{ padding: "2rem", textAlign: "center", marginBottom: "1rem" }}
+        >
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🎉</div>
+          <h2 style={{ margin: "0 0 1.5rem 0", color: "var(--primary)" }}>
+            Test Complete!
+          </h2>
+
           <div
             style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "var(--bg-overlay)",
-              color: "white",
-              padding: "2rem",
-              borderRadius: "8px",
-              textAlign: "center",
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "1rem",
+              marginBottom: "2rem",
             }}
           >
-            <h3 style={{ margin: "0 0 1rem 0" }}>Test Complete!</h3>
-            <div style={{ marginBottom: "1rem" }}>
-              <div>WPM: {wpm}</div>
-              <div>Accuracy: {accuracy}%</div>
-              <div>Time: {timeElapsed}s</div>
+            <div>
+              <div
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: "700",
+                  color: "var(--primary)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {wpm}
+              </div>
+              <div
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Words Per Minute
+              </div>
             </div>
-            <button onClick={resetGame} className="primary">
-              Try Again
-            </button>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: "700",
+                  color: "var(--accent)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {accuracy}%
+              </div>
+              <div
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Accuracy
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "2rem",
+                  fontWeight: "700",
+                  color: "var(--secondary)",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {timeElapsed}s
+              </div>
+              <div
+                style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}
+              >
+                Time Taken
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+
+          <button
+            onClick={resetGame}
+            className="primary"
+            style={{ padding: "0.75rem 2rem" }}
+          >
+            Try Another Test
+          </button>
+        </div>
+      )}
 
       {/* Typing Instructions */}
       {!isFinished ? (

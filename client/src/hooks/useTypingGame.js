@@ -47,23 +47,21 @@ export function useTypingGame() {
   }, []);
 
   const startGame = useCallback(() => {
-    if (!isActive && !isFinished) {
-      setIsActive(true);
-      const startedAt = Date.now();
-      setStartTime(startedAt);
-      startTimeRef.current = startedAt;
+    if (isActive || isFinished) return;
 
-      intervalRef.current = setInterval(() => {
-        const now = Date.now();
-        const base = startTimeRef.current || now; // if not started, avoid NaN
-        const timeElapsed = (now - base) / 1000;
-        const currentWpm = calculateWPM(
-          userInputRef.current.length,
-          timeElapsed
-        );
-        setWpm(currentWpm);
-      }, 100);
-    }
+    setIsActive(true);
+    const startedAt = Date.now();
+    setStartTime(startedAt);
+    startTimeRef.current = startedAt;
+
+    intervalRef.current = setInterval(() => {
+      // We only update WPM here, not timeElapsed for display
+      const now = Date.now();
+      const base = startTimeRef.current || now;
+      const timeElapsed = (now - base) / 1000;
+      const currentWpm = calculateWPM(userInputRef.current.length, timeElapsed);
+      setWpm(currentWpm);
+    }, 1000); // Update WPM every second
   }, [isActive, isFinished]);
 
   const handleInput = useCallback(
@@ -78,7 +76,6 @@ export function useTypingGame() {
       userInputRef.current = value;
       setCurrentIndex(value.length);
 
-      // Calculate errors
       const newErrors = [];
       for (let i = 0; i < value.length; i++) {
         if (value[i] !== text[i]) {
@@ -87,26 +84,31 @@ export function useTypingGame() {
       }
       setErrors(newErrors);
 
-      // Calculate accuracy
       const correctChars = value.length - newErrors.length;
       const currentAccuracy = calculateAccuracy(correctChars, value.length);
       setAccuracy(currentAccuracy);
 
-      // Check if finished
-      if (value === text) {
+      if (value.length === text.length) {
+        // Game finished
         setIsFinished(true);
         setIsActive(false);
-        setEndTime(Date.now());
+        const endedAt = Date.now();
+        setEndTime(endedAt);
 
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
         }
 
         // Final calculations
-        const base = startTimeRef.current || Date.now();
-        const timeElapsed = (Date.now() - base) / 1000;
+        const base = startTimeRef.current || endedAt;
+        const timeElapsed = (endedAt - base) / 1000;
         const finalWpm = calculateWPM(text.length, timeElapsed);
         setWpm(finalWpm);
+
+        // Final accuracy
+        const finalCorrectChars = text.length - newErrors.length;
+        const finalAccuracy = calculateAccuracy(finalCorrectChars, text.length);
+        setAccuracy(finalAccuracy);
       }
     },
     [isFinished, isActive, text, startGame]
@@ -143,7 +145,9 @@ export function useTypingGame() {
     wpm,
     accuracy,
     errors,
-    timeElapsed: Math.floor(timeElapsed / 1000),
+    timeElapsed: isFinished
+      ? Math.floor((endTime - startTime) / 1000)
+      : Math.floor(timeElapsed / 1000),
     handleInput,
     resetGame,
     getCharacterClass,
