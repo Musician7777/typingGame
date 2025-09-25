@@ -1,23 +1,9 @@
-import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { Moon, Sun, LogOut, User, Keyboard } from "lucide-react";
+import { LogOut, User, Keyboard } from "lucide-react";
+import ThemeSelector from "./ThemeSelector";
 
 export default function Header() {
   const { currentUser, logout } = useAuth();
-  const [theme, setTheme] = useState("light");
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
-  }, []);
-
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-  };
 
   const handleLogout = async () => {
     try {
@@ -56,22 +42,8 @@ export default function Header() {
 
           {/* Controls */}
           <div className="flex items-center gap-4">
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              style={{
-                background: "none",
-                border: "none",
-                padding: "0.5rem",
-                borderRadius: "6px",
-                cursor: "pointer",
-                color: "var(--text-secondary)",
-                transition: "color 0.2s ease",
-              }}
-              title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
-            >
-              {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
-            </button>
+            {/* Theme Selector */}
+            <ThemeSelector />
 
             {/* User Info */}
             {currentUser && (

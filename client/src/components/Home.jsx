@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Keyboard, Users, Play, Plus, ArrowRight } from "lucide-react";
+import TypewriterText from "./TypewriterText";
 
 export default function Home() {
   const [roomId, setRoomId] = useState("");
@@ -52,9 +53,18 @@ export default function Home() {
             fontWeight: "700",
             margin: "0 0 1rem 0",
             color: "var(--text-primary)",
+            minHeight: "3rem", // Prevent layout shift during animation
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {import.meta.env.VITE_APP_NAME || "TypeRace"}
+          <TypewriterText
+            text={import.meta.env.VITE_APP_NAME || "TypeRace"}
+            speed={100}
+            startDelay={0}
+            showCursor={true}
+          />
         </h1>
         <p
           style={{
