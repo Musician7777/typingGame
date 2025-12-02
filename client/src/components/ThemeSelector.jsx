@@ -78,7 +78,13 @@ export default function ThemeSelector() {
               maxHeight: "300px",
               overflowY: "auto",
               overflowX: "hidden",
+              // Hide scrollbar for all browsers
+              scrollbarWidth: "none", // Firefox
+              msOverflowStyle: "none", // IE and Edge
+              WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
             }}
+            // Hide scrollbar for Chrome, Safari and Opera
+            className="theme-dropdown"
           >
             {themes.map((theme) => (
               <button

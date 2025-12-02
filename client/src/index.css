@@ -49,9 +49,9 @@
   /* Typography */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', 
+  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
     Consolas, 'Courier New', monospace;
-  
+
   line-height: 1.6;
   font-weight: 400;
   font-synthesis: none;
@@ -76,21 +76,21 @@ body {
   --secondary: hsl(215, 16%, 60%);
   --accent: hsl(142, 76%, 45%);
   --accent-hover: hsl(142, 76%, 55%);
-  
+
   --bg-primary: hsl(222, 47%, 11%);
   --bg-secondary: hsl(217, 33%, 17%);
   --bg-card: hsla(217, 33%, 17%, 0.7);
   --bg-overlay: rgba(0, 0, 0, 0.8);
   --bg-gradient-start: hsl(222, 47%, 11%);
   --bg-gradient-end: hsl(217, 33%, 17%);
-  
+
   --text-primary: hsl(210, 40%, 98%);
   --text-secondary: hsl(215, 20%, 65%);
   --text-muted: hsl(215, 16%, 47%);
-  
+
   --border-primary: hsl(215, 25%, 27%);
   --border-secondary: hsl(215, 20%, 35%);
-  
+
   --text-correct: hsl(142, 71%, 50%);
   --text-incorrect: hsl(0, 84%, 65%);
   --text-pending: hsl(215, 16%, 47%);
@@ -100,7 +100,7 @@ body {
   --trail-glow: hsla(217, 91%, 65%, 0.98);
   --trail-glow-strong: hsla(217, 91%, 60%, 1);
   --trail-shadow: hsla(0, 0%, 0%, 0.7);
-  
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
@@ -121,22 +121,22 @@ body {
   --secondary: hsl(215, 16%, 47%);
   --accent: hsl(271, 91%, 65%);
   --accent-hover: hsl(271, 91%, 55%);
-  
+
   --bg-primary: hsl(270, 100%, 99%);
   --bg-secondary: hsl(270, 100%, 97%);
   --bg-card: hsla(0, 0%, 100%, 0.9);
   --bg-overlay: rgba(88, 28, 135, 0.6);
   --bg-gradient-start: hsl(270, 100%, 99%);
   --bg-gradient-end: hsl(262, 83%, 94%);
-  
+
   --text-primary: hsl(271, 91%, 25%);
   --text-secondary: hsl(262, 83%, 38%);
   --text-muted: hsl(262, 52%, 67%);
-  
+
   --border-primary: hsl(270, 60%, 90%);
   --border-secondary: hsl(270, 55%, 85%);
   --border-focus: hsl(262, 83%, 58%);
-  
+
   --text-correct: hsl(142, 71%, 45%);
   --text-incorrect: hsl(0, 84%, 60%);
   --text-pending: hsl(262, 52%, 67%);
@@ -161,22 +161,22 @@ body {
   --secondary: hsl(215, 16%, 47%);
   --accent: hsl(142, 69%, 58%);
   --accent-hover: hsl(142, 76%, 36%);
-  
+
   --bg-primary: hsl(138, 76%, 97%);
   --bg-secondary: hsl(142, 76%, 94%);
   --bg-card: hsla(0, 0%, 100%, 0.9);
   --bg-overlay: rgba(20, 83, 45, 0.6);
   --bg-gradient-start: hsl(138, 76%, 97%);
   --bg-gradient-end: hsl(142, 62%, 90%);
-  
+
   --text-primary: hsl(142, 72%, 15%);
   --text-secondary: hsl(142, 64%, 24%);
   --text-muted: hsl(142, 52%, 58%);
-  
+
   --border-primary: hsl(142, 47%, 88%);
   --border-secondary: hsl(142, 48%, 82%);
   --border-focus: hsl(142, 76%, 36%);
-  
+
   --text-correct: hsl(142, 71%, 45%);
   --text-incorrect: hsl(0, 84%, 60%);
   --text-pending: hsl(142, 52%, 58%);
@@ -201,22 +201,22 @@ body {
   --secondary: hsl(215, 16%, 47%);
   --accent: hsl(24, 95%, 53%);
   --accent-hover: hsl(17, 88%, 40%);
-  
+
   --bg-primary: hsl(33, 100%, 96%);
   --bg-secondary: hsl(33, 100%, 92%);
   --bg-card: hsla(0, 0%, 100%, 0.9);
   --bg-overlay: rgba(154, 52, 18, 0.6);
   --bg-gradient-start: hsl(33, 100%, 96%);
   --bg-gradient-end: hsl(25, 95%, 88%);
-  
+
   --text-primary: hsl(17, 73%, 30%);
   --text-secondary: hsl(17, 66%, 38%);
   --text-muted: hsl(24, 90%, 62%);
-  
+
   --border-primary: hsl(25, 95%, 84%);
   --border-secondary: hsl(24, 95%, 74%);
   --border-focus: hsl(17, 88%, 40%);
-  
+
   --text-correct: hsl(142, 71%, 45%);
   --text-incorrect: hsl(0, 84%, 60%);
   --text-pending: hsl(24, 90%, 62%);
@@ -241,22 +241,22 @@ body {
   --secondary: hsl(215, 16%, 47%);
   --accent: hsl(347, 89%, 61%);
   --accent-hover: hsl(346, 77%, 50%);
-  
+
   --bg-primary: hsl(351, 100%, 96%);
   --bg-secondary: hsl(351, 100%, 93%);
   --bg-card: hsla(0, 0%, 100%, 0.9);
   --bg-overlay: rgba(136, 19, 55, 0.6);
   --bg-gradient-start: hsl(351, 100%, 96%);
   --bg-gradient-end: hsl(347, 89%, 90%);
-  
+
   --text-primary: hsl(330, 85%, 27%);
   --text-secondary: hsl(330, 84%, 37%);
   --text-muted: hsl(347, 77%, 70%);
-  
+
   --border-primary: hsl(347, 77%, 85%);
   --border-secondary: hsl(347, 77%, 77%);
   --border-focus: hsl(346, 77%, 50%);
-  
+
   --text-correct: hsl(142, 71%, 45%);
   --text-incorrect: hsl(0, 84%, 60%);
   --text-pending: hsl(347, 77%, 70%);
@@ -281,22 +281,22 @@ body {
   --secondary: hsl(215, 16%, 47%);
   --accent: hsl(172, 76%, 50%);
   --accent-hover: hsl(173, 80%, 40%);
-  
+
   --bg-primary: hsl(166, 76%, 97%);
   --bg-secondary: hsl(167, 85%, 89%);
   --bg-card: hsla(0, 0%, 100%, 0.9);
   --bg-overlay: rgba(19, 78, 74, 0.6);
   --bg-gradient-start: hsl(166, 76%, 97%);
   --bg-gradient-end: hsl(167, 66%, 87%);
-  
+
   --text-primary: hsl(173, 87%, 19%);
   --text-secondary: hsl(172, 66%, 28%);
   --text-muted: hsl(172, 66%, 56%);
-  
+
   --border-primary: hsl(167, 85%, 89%);
   --border-secondary: hsl(172, 76%, 77%);
   --border-focus: hsl(173, 80%, 40%);
-  
+
   --text-correct: hsl(142, 71%, 45%);
   --text-incorrect: hsl(0, 84%, 60%);
   --text-pending: hsl(172, 66%, 56%);
@@ -486,6 +486,13 @@ input:focus {
 
 .card:hover {
   box-shadow: var(--shadow-xl);
+}
+
+/* ========== THEME DROPDOWN ========== */
+
+/* Hide scrollbar for theme dropdown in Chrome, Safari, and Opera */
+.theme-dropdown::-webkit-scrollbar {
+  display: none;
 }
 
 /* ========== CONTAINERS ========== */
