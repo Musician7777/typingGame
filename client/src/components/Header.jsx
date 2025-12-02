@@ -1,6 +1,7 @@
 import { useAuth } from "../contexts/AuthContext";
 import { LogOut, User, Keyboard } from "lucide-react";
 import ThemeSelector from "./ThemeSelector";
+import { Link } from "react-router-dom";
 
 export default function Header() {
   const { currentUser, logout } = useAuth();
@@ -46,7 +47,8 @@ export default function Header() {
             >
               <Keyboard size={24} style={{ color: "white" }} />
             </div>
-            <h1
+            <Link
+              to="/"
               style={{
                 fontSize: "1.625rem",
                 fontWeight: "800",
@@ -59,7 +61,7 @@ export default function Header() {
               }}
             >
               {import.meta.env.VITE_APP_NAME || "TypeRace"}
-            </h1>
+            </Link>
           </div>
 
           {/* Controls */}
