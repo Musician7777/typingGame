@@ -5,7 +5,7 @@ import {
   calculateAccuracy,
 } from "../utils/textGenerator";
 
-export function useTypingGame() {
+export function useTypingGame(settings = { mode: "words", value: 50 }) {
   const [text, setText] = useState("");
   const [userInput, setUserInput] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -17,6 +17,7 @@ export function useTypingGame() {
   const [errors, setErrors] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
   const [trailMarks, setTrailMarks] = useState([]);
+  const [timeRemaining, setTimeRemaining] = useState(null);
 
   const intervalRef = useRef(null);
   // Refs to avoid stale values inside setInterval
@@ -53,7 +54,9 @@ export function useTypingGame() {
   }, []);
 
   const resetGame = useCallback(() => {
-    const newText = generateWords(50).join(" ");
+    // Generate text based on mode
+    const wordCount = settings.mode === "words" ? settings.value : 200; // For time mode, generate lots of words
+    const newText = generateWords(wordCount).join(" ");
     setText(newText);
     setUserInput("");
     userInputRef.current = "";
@@ -69,10 +72,17 @@ export function useTypingGame() {
     clearTrailTimers();
     setTrailMarks([]);
 
+    // Initialize time remaining for time mode
+    if (settings.mode === "time") {
+      setTimeRemaining(settings.value * 60); // Convert minutes to seconds
+    } else {
+      setTimeRemaining(null);
+    }
+
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, [clearTrailTimers]);
+  }, [clearTrailTimers, settings]);
 
   const startGame = useCallback(() => {
     if (isActive || isFinished) return;
@@ -83,14 +93,39 @@ export function useTypingGame() {
     startTimeRef.current = startedAt;
 
     intervalRef.current = setInterval(() => {
-      // We only update WPM here, not timeElapsed for display
       const now = Date.now();
       const base = startTimeRef.current || now;
       const timeElapsed = (now - base) / 1000;
       const currentWpm = calculateWPM(userInputRef.current.length, timeElapsed);
       setWpm(currentWpm);
-    }, 1000); // Update WPM every second
-  }, [isActive, isFinished]);
+
+      // Handle time mode countdown
+      if (settings.mode === "time") {
+        const elapsed = Math.floor(timeElapsed);
+        const remaining = Math.max(0, settings.value * 60 - elapsed);
+        setTimeRemaining(remaining);
+
+        // Time's up!
+        if (remaining === 0) {
+          setIsFinished(true);
+          setIsActive(false);
+          setEndTime(Date.now());
+
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
+
+          // Calculate final stats
+          const finalWpm = calculateWPM(userInputRef.current.length, settings.value * 60);
+          setWpm(finalWpm);
+
+          const correctChars = userInputRef.current.split("").filter((char, i) => char === text[i]).length;
+          const finalAccuracy = calculateAccuracy(correctChars, userInputRef.current.length);
+          setAccuracy(finalAccuracy);
+        }
+      }
+    }, 1000); // Update every second
+  }, [isActive, isFinished, settings, text]);
 
   const handleInput = useCallback(
     (value) => {
@@ -188,6 +223,8 @@ export function useTypingGame() {
     timeElapsed: isFinished
       ? Math.floor((endTime - startTime) / 1000)
       : Math.floor(timeElapsed / 1000),
+    timeRemaining,
+    settings,
     handleInput,
     resetGame,
     getCharacterClass,

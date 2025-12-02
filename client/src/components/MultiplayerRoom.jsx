@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useMultiplayerGame } from "../hooks/useMultiplayerGame";
 import { useAuth } from "../contexts/AuthContext";
-import { Users, Play, RotateCcw, Crown, Trophy, Medal } from "lucide-react";
+import { Users, Play, RotateCcw, Crown, Trophy, Medal, Clock, Hash } from "lucide-react";
 import MultiplayerResultsModal from "./MultiplayerResultsModal";
+import GameSettingsModal from "./GameSettingsModal";
 
 export default function MultiplayerRoom({ roomId }) {
   const { currentUser } = useAuth();
@@ -29,6 +30,15 @@ export default function MultiplayerRoom({ roomId }) {
 
   const containerRef = useRef(null);
   const [showResultsModal, setShowResultsModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [gameSettings, setGameSettings] = useState({ mode: "words", value: 50 });
+
+  const handleStartGame = (settings) => {
+    setGameSettings(settings);
+    setShowSettings(false);
+    // In multiplayer, the room creator will start the game
+    // For now, we'll just close the modal and use default settings
+  };
 
   useEffect(() => {
     if (gameEnded) {
@@ -164,10 +174,16 @@ export default function MultiplayerRoom({ roomId }) {
 
           <div className="flex gap-2">
             {gameState === "waiting" && players.length >= 1 && (
-              <button onClick={startGame} className="primary">
-                <Play size={16} />
-                Start Game
-              </button>
+              <>
+                <button onClick={() => setShowSettings(true)} style={{ marginRight: "0.5rem" }}>
+                  <Clock size={16} />
+                  Settings
+                </button>
+                <button onClick={startGame} className="primary">
+                  <Play size={16} />
+                  Start Game
+                </button>
+              </>
             )}
 
             {gameState === "finished" && (
@@ -184,8 +200,8 @@ export default function MultiplayerRoom({ roomId }) {
                   gameState === "playing"
                     ? "var(--accent)"
                     : gameState === "finished"
-                    ? "var(--text-success)"
-                    : "var(--secondary)",
+                      ? "var(--text-success)"
+                      : "var(--secondary)",
                 color: "white",
                 borderRadius: "6px",
                 fontSize: "0.875rem",
@@ -195,8 +211,8 @@ export default function MultiplayerRoom({ roomId }) {
               {gameState === "waiting"
                 ? "Waiting"
                 : gameState === "playing"
-                ? "Playing"
-                : "Finished"}
+                  ? "Playing"
+                  : "Finished"}
             </div>
           </div>
         </div>
@@ -438,10 +454,10 @@ export default function MultiplayerRoom({ roomId }) {
                         state === "correct"
                           ? "var(--text-correct)"
                           : state === "incorrect"
-                          ? "var(--text-incorrect)"
-                          : state === "current"
-                          ? "var(--text-current)"
-                          : "var(--text-pending)";
+                            ? "var(--text-incorrect)"
+                            : state === "current"
+                              ? "var(--text-current)"
+                              : "var(--text-pending)";
 
                       return (
                         <span
@@ -491,14 +507,52 @@ export default function MultiplayerRoom({ roomId }) {
       {gameState === "waiting" && (
         <div className="card" style={{ padding: "2rem", textAlign: "center" }}>
           <h3 style={{ marginBottom: "1rem" }}>Waiting for game to start</h3>
-          <div className="text-muted">
+          <div className="text-muted" style={{ marginBottom: "1.5rem" }}>
             {players.length === 0
               ? "Waiting for players to join..."
               : players.length === 1
-              ? "Need at least 1 player to start."
-              : 'Ready to play! Click "Start Game" when ready.'}
+                ? "Need at least 1 player to start."
+                : 'Ready to play! Click "Start Game" when ready.'}
+          </div>
+
+          {/* Game Settings Info */}
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              padding: "0.75rem 1.5rem",
+              background: "linear-gradient(135deg, var(--primary-light) 0%, var(--bg-secondary) 100%)",
+              borderRadius: "50px",
+              border: "1px solid var(--border-primary)",
+            }}
+          >
+            {gameSettings.mode === "words" ? (
+              <>
+                <Hash size={18} style={{ color: "var(--primary)" }} />
+                <span style={{ fontWeight: "600", color: "var(--text-primary)" }}>
+                  {gameSettings.value} Words
+                </span>
+              </>
+            ) : (
+              <>
+                <Clock size={18} style={{ color: "var(--primary)" }} />
+                <span style={{ fontWeight: "600", color: "var(--text-primary)" }}>
+                  {gameSettings.value} Minute{gameSettings.value > 1 ? "s" : ""}
+                </span>
+              </>
+            )}
           </div>
         </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <GameSettingsModal
+          onStart={handleStartGame}
+          onClose={() => setShowSettings(false)}
+          showCancel={true}
+        />
       )}
 
       {/* Results Modal */}
