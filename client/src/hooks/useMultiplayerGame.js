@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { io } from "socket.io-client";
 import { useAuth } from "../contexts/AuthContext";
 import { calculateWPM, calculateAccuracy } from "../utils/textGenerator";
 
-const SERVER_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+const SERVER_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3002";
 
 export function useMultiplayerGame(roomId) {
   const { currentUser } = useAuth();
@@ -20,10 +20,40 @@ export function useMultiplayerGame(roomId) {
   const [errors, setErrors] = useState([]);
   const [players, setPlayers] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [gameEnded, setGameEnded] = useState(false);
+  const [finalWpm, setFinalWpm] = useState(0);
+  const [finalTime, setFinalTime] = useState(0);
   const [position, setPosition] = useState(null);
+  const [trailMarks, setTrailMarks] = useState([]);
 
   const intervalRef = useRef(null);
   const lastUpdateRef = useRef(0);
+  const userInputRef = useRef("");
+  const trailTimeoutsRef = useRef([]);
+
+  const clearTrailTimers = useCallback(() => {
+    trailTimeoutsRef.current.forEach(({ timeoutId }) =>
+      clearTimeout(timeoutId)
+    );
+    trailTimeoutsRef.current = [];
+  }, []);
+
+  const addTrailMark = useCallback((index) => {
+    if (index < 0) return;
+
+    const id = `${index}-${Date.now()}-${Math.random()}`;
+
+    setTrailMarks((prev) => [...prev, { index, id }]);
+
+    const timeoutId = setTimeout(() => {
+      setTrailMarks((prev) => prev.filter((mark) => mark.id !== id));
+      trailTimeoutsRef.current = trailTimeoutsRef.current.filter(
+        (entry) => entry.id !== id
+      );
+    }, 300);
+
+    trailTimeoutsRef.current.push({ id, timeoutId });
+  }, []);
 
   // Initialize socket connection
   useEffect(() => {
@@ -68,18 +98,36 @@ export function useMultiplayerGame(roomId) {
       setAccuracy(100);
       setIsFinished(false);
       setPosition(null);
+      setGameEnded(false);
+      setFinalWpm(0);
+      setFinalTime(0);
+      userInputRef.current = "";
+      clearTrailTimers();
+      setTrailMarks([]);
 
       // Start WPM calculation interval
       intervalRef.current = setInterval(() => {
         const now = Date.now();
         const timeElapsed = (now - startTime) / 1000;
-        const currentWpm = calculateWPM(userInput.length, timeElapsed);
+        const currentWpm = calculateWPM(
+          userInputRef.current.length,
+          timeElapsed
+        );
         setWpm(currentWpm);
       }, 100);
     });
 
     // Players progress updates
     socketInstance.on("players-progress", ({ players }) => {
+      console.log(
+        "Players progress update:",
+        players.map((p) => ({
+          name: p.user.displayName || p.user.email,
+          progress: p.progress,
+          temporaryPosition: p.temporaryPosition,
+          finished: p.finished,
+        }))
+      );
       setPlayers(players);
     });
 
@@ -95,12 +143,17 @@ export function useMultiplayerGame(roomId) {
     );
 
     // Game finished
-    socketInstance.on("game-finished", () => {
+    socketInstance.on("game-finished", ({ players: finalPlayers }) => {
       console.log("Game finished");
       setGameState("finished");
       setIsActive(false);
+      setGameEnded(true);
+      if (finalPlayers) {
+        setPlayers(finalPlayers);
+      }
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     });
 
@@ -118,9 +171,16 @@ export function useMultiplayerGame(roomId) {
       setIsActive(false);
       setStartTime(null);
       setPosition(null);
+      setGameEnded(false);
+      setFinalWpm(0);
+      setFinalTime(0);
+      userInputRef.current = "";
+      clearTrailTimers();
+      setTrailMarks([]);
 
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     });
 
@@ -140,15 +200,23 @@ export function useMultiplayerGame(roomId) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      clearTrailTimers();
     };
-  }, [currentUser, roomId]);
+  }, [clearTrailTimers, currentUser, roomId]);
 
   const handleInput = useCallback(
     (value) => {
       if (!isActive || isFinished || gameState !== "playing") return;
 
+      const previousLength = userInputRef.current.length;
+
       setUserInput(value);
       setCurrentIndex(value.length);
+      userInputRef.current = value;
+
+      if (value.length > previousLength) {
+        addTrailMark(value.length - 1);
+      }
 
       // Calculate errors
       const newErrors = [];
@@ -173,19 +241,31 @@ export function useMultiplayerGame(roomId) {
         setIsFinished(true);
         setIsActive(false);
 
+        // Clear the WPM calculation interval immediately when player finishes
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
 
         // Final calculations
         const timeElapsed = (Date.now() - startTime) / 1000;
-        const finalWpm = calculateWPM(text.length, timeElapsed);
+        const finalWpm =
+          timeElapsed > 0 ? calculateWPM(text.length, timeElapsed) : 0;
         setWpm(finalWpm);
+        setFinalWpm(finalWpm);
+        setFinalTime(timeElapsed);
+
+        console.log(
+          `Player finished! Final WPM: ${finalWpm}, Time: ${timeElapsed}s`
+        );
       }
 
       // Calculate current WPM for socket update
       const currentTimeElapsed = (Date.now() - startTime) / 1000;
-      const currentWpm = calculateWPM(value.length, currentTimeElapsed);
+      const currentWpm =
+        currentTimeElapsed > 0
+          ? calculateWPM(value.length, currentTimeElapsed)
+          : 0;
 
       // Throttle socket updates to prevent spam
       const now = Date.now();
@@ -197,14 +277,24 @@ export function useMultiplayerGame(roomId) {
           socket.emit("typing-update", {
             roomId,
             progress: Math.min(progress, 100),
-            wpm: currentWpm,
+            wpm: finished ? finalWpm || currentWpm : currentWpm,
             accuracy: currentAccuracy,
             finished,
           });
         }
       }
     },
-    [isActive, isFinished, gameState, text, wpm, startTime, socket, roomId]
+    [
+      addTrailMark,
+      isActive,
+      isFinished,
+      gameState,
+      text,
+      wpm,
+      startTime,
+      socket,
+      roomId,
+    ]
   );
 
   const startGame = useCallback(() => {
@@ -231,7 +321,18 @@ export function useMultiplayerGame(roomId) {
     [currentIndex, errors]
   );
 
-  const timeElapsed = startTime ? (Date.now() - startTime) / 1000 : 0;
+  const timeElapsed = useMemo(() => {
+    if (!startTime) return 0;
+    if (isFinished) return finalTime;
+    if (gameEnded)
+      return finalTime > 0 ? finalTime : (Date.now() - startTime) / 1000;
+    return (Date.now() - startTime) / 1000;
+  }, [startTime, isFinished, gameEnded, finalTime]);
+
+  const activeTrailIndices = useMemo(
+    () => new Set(trailMarks.map((mark) => mark.index)),
+    [trailMarks]
+  );
 
   return {
     room,
@@ -242,7 +343,8 @@ export function useMultiplayerGame(roomId) {
     currentIndex,
     isActive,
     isFinished,
-    wpm,
+    gameEnded,
+    wpm: isFinished || gameEnded ? finalWpm : wpm,
     accuracy,
     errors,
     position,
@@ -251,6 +353,7 @@ export function useMultiplayerGame(roomId) {
     startGame,
     resetGame,
     getCharacterClass,
+    hasTrail: (index) => activeTrailIndices.has(index),
     connected: socket?.connected || false,
   };
 }

@@ -14,6 +14,7 @@ export default function TypingTest() {
     handleInput,
     resetGame,
     getCharacterClass,
+    hasTrail,
   } = useTypingGame();
 
   const containerRef = useRef(null);
@@ -120,7 +121,7 @@ export default function TypingTest() {
         className="card mb-4"
         style={{
           padding: "2rem",
-          fontSize: "1.2rem",
+          fontSize: "1.5rem",
           lineHeight: "1.8",
           fontFamily: "var(--font-mono, monospace)",
           position: "relative",
@@ -131,34 +132,62 @@ export default function TypingTest() {
           style={{
             display: "flex",
             flexWrap: "wrap",
-            gap: "2px",
+            gap: "0",
           }}
         >
-          {text.split("").map((char, index) => (
-            <span
-              key={index}
-              style={{
-                color:
-                  getCharacterClass(index) === "correct"
-                    ? "var(--text-correct)"
-                    : getCharacterClass(index) === "incorrect"
-                    ? "var(--text-incorrect)"
-                    : getCharacterClass(index) === "current"
-                    ? "var(--text-current)"
-                    : "var(--text-pending)",
-                backgroundColor:
-                  getCharacterClass(index) === "current"
-                    ? "var(--cursor-color)"
-                    : "transparent",
-                borderRadius:
-                  getCharacterClass(index) === "current" ? "2px" : "0",
-                padding: getCharacterClass(index) === "current" ? "0 1px" : "0",
-                transition: "all 0.1s ease",
-              }}
-            >
-              {char === " " ? "\u00A0" : char}
-            </span>
-          ))}
+          {(() => {
+            const words = text.split(/(\s+)/);
+            let charIndex = 0;
+
+            return words.map((word, wordIdx) => (
+              <span
+                key={wordIdx}
+                style={{
+                  display: "inline-block",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {word.split("").map((char, charIdx) => {
+                  const currentIndex = charIndex++;
+                  const state = getCharacterClass(currentIndex);
+                  const isCurrent = state === "current";
+                  const isTrail = hasTrail(currentIndex);
+
+                  const color =
+                    state === "correct"
+                      ? "var(--text-correct)"
+                      : state === "incorrect"
+                      ? "var(--text-incorrect)"
+                      : state === "current"
+                      ? "var(--text-current)"
+                      : "var(--text-pending)";
+
+                  return (
+                    <span
+                      key={charIdx}
+                      style={{
+                        color,
+                        backgroundColor: isCurrent
+                          ? "var(--cursor-color)"
+                          : "transparent",
+                        borderRadius: isCurrent ? "2px" : "0",
+                        padding: isCurrent ? "0 1px" : "0",
+                        transition: "all 0.1s ease",
+                        textShadow: isTrail
+                          ? "0 0 4px var(--trail-shadow), 0 0 12px var(--trail-glow-strong), 0 0 30px var(--trail-glow), 0 0 48px var(--trail-glow)"
+                          : "none",
+                        animation: isTrail
+                          ? "typingTrail 0.7s ease-out"
+                          : "none",
+                      }}
+                    >
+                      {char === " " ? "\u00A0" : char}
+                    </span>
+                  );
+                })}
+              </span>
+            ));
+          })()}
         </div>
       </div>
 

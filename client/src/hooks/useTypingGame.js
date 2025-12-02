@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   generateWords,
   calculateWPM,
@@ -16,11 +16,37 @@ export function useTypingGame() {
   const [accuracy, setAccuracy] = useState(100);
   const [errors, setErrors] = useState([]);
   const [isFinished, setIsFinished] = useState(false);
+  const [trailMarks, setTrailMarks] = useState([]);
 
   const intervalRef = useRef(null);
   // Refs to avoid stale values inside setInterval
   const startTimeRef = useRef(null);
   const userInputRef = useRef("");
+  const trailTimeoutsRef = useRef([]);
+
+  const clearTrailTimers = useCallback(() => {
+    trailTimeoutsRef.current.forEach(({ timeoutId }) =>
+      clearTimeout(timeoutId)
+    );
+    trailTimeoutsRef.current = [];
+  }, []);
+
+  const addTrailMark = useCallback((index) => {
+    if (index < 0) return;
+
+    const id = `${index}-${Date.now()}-${Math.random()}`;
+
+    setTrailMarks((prev) => [...prev, { index, id }]);
+
+    const timeoutId = setTimeout(() => {
+      setTrailMarks((prev) => prev.filter((mark) => mark.id !== id));
+      trailTimeoutsRef.current = trailTimeoutsRef.current.filter(
+        (entry) => entry.id !== id
+      );
+    }, 300);
+
+    trailTimeoutsRef.current.push({ id, timeoutId });
+  }, []);
 
   useEffect(() => {
     resetGame();
@@ -40,11 +66,13 @@ export function useTypingGame() {
     setAccuracy(100);
     setErrors([]);
     setIsFinished(false);
+    clearTrailTimers();
+    setTrailMarks([]);
 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
-  }, []);
+  }, [clearTrailTimers]);
 
   const startGame = useCallback(() => {
     if (isActive || isFinished) return;
@@ -72,9 +100,15 @@ export function useTypingGame() {
         startGame();
       }
 
+      const previousLength = userInputRef.current.length;
+
       setUserInput(value);
       userInputRef.current = value;
       setCurrentIndex(value.length);
+
+      if (value.length > previousLength) {
+        addTrailMark(value.length - 1);
+      }
 
       const newErrors = [];
       for (let i = 0; i < value.length; i++) {
@@ -119,8 +153,9 @@ export function useTypingGame() {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      clearTrailTimers();
     };
-  }, []);
+  }, [clearTrailTimers]);
 
   const getCharacterClass = useCallback(
     (index) => {
@@ -135,6 +170,11 @@ export function useTypingGame() {
   );
 
   const timeElapsed = startTime ? (endTime || Date.now()) - startTime : 0;
+
+  const activeTrailIndices = useMemo(
+    () => new Set(trailMarks.map((mark) => mark.index)),
+    [trailMarks]
+  );
 
   return {
     text,
@@ -151,5 +191,6 @@ export function useTypingGame() {
     handleInput,
     resetGame,
     getCharacterClass,
+    hasTrail: (index) => activeTrailIndices.has(index),
   };
 }

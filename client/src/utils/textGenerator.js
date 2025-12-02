@@ -341,8 +341,12 @@ export function generateSentences(count = 3) {
 }
 
 export function calculateWPM(charactersTyped, timeElapsed) {
-  if (timeElapsed === 0) return 0;
-  return Math.round(charactersTyped / 5 / (timeElapsed / 60));
+  if (timeElapsed === 0 || timeElapsed < 1) return 0;
+  // WPM = (characters typed / 5) / (time in minutes)
+  // Using 5 characters per word is the standard
+  const words = charactersTyped / 5;
+  const minutes = timeElapsed / 60;
+  return Math.round(words / minutes);
 }
 
 export function calculateAccuracy(correct, total) {

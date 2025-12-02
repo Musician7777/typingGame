@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMultiplayerGame } from "../hooks/useMultiplayerGame";
 import { useAuth } from "../contexts/AuthContext";
 import { Users, Play, RotateCcw, Crown, Trophy, Medal } from "lucide-react";
+import MultiplayerResultsModal from "./MultiplayerResultsModal";
 
 export default function MultiplayerRoom({ roomId }) {
   const { currentUser } = useAuth();
@@ -13,6 +14,7 @@ export default function MultiplayerRoom({ roomId }) {
     userInput,
     isActive,
     isFinished,
+    gameEnded,
     wpm,
     accuracy,
     position,
@@ -21,10 +23,20 @@ export default function MultiplayerRoom({ roomId }) {
     startGame,
     resetGame,
     getCharacterClass,
+    hasTrail,
     connected,
   } = useMultiplayerGame(roomId);
 
   const containerRef = useRef(null);
+  const [showResultsModal, setShowResultsModal] = useState(false);
+
+  useEffect(() => {
+    if (gameEnded) {
+      setShowResultsModal(true);
+    } else {
+      setShowResultsModal(false);
+    }
+  }, [gameEnded]);
 
   // Handle direct typing on the text without input field
   useEffect(() => {
@@ -108,13 +120,25 @@ export default function MultiplayerRoom({ roomId }) {
 
   // Create sorted rankings for results
   const sortedPlayers = [...players].sort((a, b) => {
+    // First, sort by finished status and position for finished players
     if (a.finished && b.finished) {
       return a.position - b.position;
     }
     if (a.finished) return -1;
     if (b.finished) return 1;
-    return b.progress - a.progress;
+
+    // For unfinished players, sort by progress, then by WPM
+    if (a.progress !== b.progress) {
+      return b.progress - a.progress;
+    }
+    return b.wpm - a.wpm;
   });
+
+  // Assign final ranking positions for display
+  const rankedPlayers = sortedPlayers.map((player, index) => ({
+    ...player,
+    finalPosition: player.position || index + 1,
+  }));
 
   return (
     <div
@@ -220,14 +244,53 @@ export default function MultiplayerRoom({ roomId }) {
                     </span>
                   )}
                 </div>
-                {player.position && (
-                  <div className="flex items-center gap-1">
-                    {getPositionIcon(player.position)}
-                    <span style={{ color: getPositionColor(player.position) }}>
-                      #{player.position}
+                <div className="flex items-center gap-1">
+                  {player.finished && player.position ? (
+                    // Final position for finished players
+                    <>
+                      {getPositionIcon(player.position)}
+                      <span
+                        style={{
+                          color: getPositionColor(player.position),
+                          fontWeight: "600",
+                        }}
+                      >
+                        #{player.position}
+                      </span>
+                    </>
+                  ) : gameState === "playing" && player.temporaryPosition ? (
+                    // Live temporary position during gameplay
+                    <span
+                      style={{
+                        color:
+                          player.temporaryPosition <= 3
+                            ? getPositionColor(player.temporaryPosition)
+                            : "var(--text-secondary)",
+                        fontSize: "0.875rem",
+                        fontWeight:
+                          player.temporaryPosition <= 3 ? "600" : "normal",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.25rem",
+                      }}
+                    >
+                      {player.temporaryPosition <= 3 &&
+                        getPositionIcon(player.temporaryPosition)}
+                      #{player.temporaryPosition}
                     </span>
-                  </div>
-                )}
+                  ) : gameState === "playing" ? (
+                    // Fallback for players without position yet
+                    <span
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.875rem",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Racing...
+                    </span>
+                  ) : null}
+                </div>
               </div>
 
               <div className="flex justify-between text-sm mb-2">
@@ -340,7 +403,7 @@ export default function MultiplayerRoom({ roomId }) {
             className="card mb-4"
             style={{
               padding: "2rem",
-              fontSize: "1.2rem",
+              fontSize: "1.5rem",
               lineHeight: "1.8",
               fontFamily: "var(--font-mono, monospace)",
               minHeight: "120px",
@@ -350,40 +413,67 @@ export default function MultiplayerRoom({ roomId }) {
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "2px",
+                gap: "0",
               }}
             >
-              {text.split("").map((char, index) => (
-                <span
-                  key={index}
-                  style={{
-                    color:
-                      getCharacterClass(index) === "correct"
-                        ? "var(--text-correct)"
-                        : getCharacterClass(index) === "incorrect"
-                        ? "var(--text-incorrect)"
-                        : getCharacterClass(index) === "current"
-                        ? "var(--text-current)"
-                        : "var(--text-pending)",
-                    backgroundColor:
-                      getCharacterClass(index) === "current"
-                        ? "var(--cursor-color)"
-                        : "transparent",
-                    borderRadius:
-                      getCharacterClass(index) === "current" ? "2px" : "0",
-                    padding:
-                      getCharacterClass(index) === "current" ? "0 1px" : "0",
-                    transition: "all 0.1s ease",
-                  }}
-                >
-                  {char === " " ? "\u00A0" : char}
-                </span>
-              ))}
+              {(() => {
+                const words = text.split(/(\s+)/);
+                let charIndex = 0;
+
+                return words.map((word, wordIdx) => (
+                  <span
+                    key={wordIdx}
+                    style={{
+                      display: "inline-block",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {word.split("").map((char, charIdx) => {
+                      const currentIndex = charIndex++;
+                      const state = getCharacterClass(currentIndex);
+                      const isCurrent = state === "current";
+                      const isTrail = hasTrail(currentIndex);
+
+                      const color =
+                        state === "correct"
+                          ? "var(--text-correct)"
+                          : state === "incorrect"
+                          ? "var(--text-incorrect)"
+                          : state === "current"
+                          ? "var(--text-current)"
+                          : "var(--text-pending)";
+
+                      return (
+                        <span
+                          key={charIdx}
+                          style={{
+                            color,
+                            backgroundColor: isCurrent
+                              ? "var(--cursor-color)"
+                              : "transparent",
+                            borderRadius: isCurrent ? "2px" : "0",
+                            padding: isCurrent ? "0 1px" : "0",
+                            transition: "all 0.1s ease",
+                            textShadow: isTrail
+                              ? "0 0 4px var(--trail-shadow), 0 0 12px var(--trail-glow-strong), 0 0 30px var(--trail-glow), 0 0 48px var(--trail-glow)"
+                              : "none",
+                            animation: isTrail
+                              ? "typingTrail 0.7s ease-out"
+                              : "none",
+                          }}
+                        >
+                          {char === " " ? "\u00A0" : char}
+                        </span>
+                      );
+                    })}
+                  </span>
+                ));
+              })()}
             </div>
           </div>
 
           {/* Typing Instructions */}
-          {gameState === "playing" && (
+          {gameState === "playing" && !isFinished && (
             <div
               className="card"
               style={{ padding: "1rem", textAlign: "center" }}
@@ -391,118 +481,6 @@ export default function MultiplayerRoom({ roomId }) {
               <div className="text-sm text-muted">
                 Start typing directly! Press <strong>Backspace</strong> to
                 correct mistakes.
-              </div>
-            </div>
-          )}
-
-          {/* Results Modal */}
-          {gameState === "finished" && (
-            <div
-              style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: "var(--bg-overlay)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 1000,
-              }}
-            >
-              <div
-                className="card"
-                style={{
-                  padding: "2rem",
-                  maxWidth: "500px",
-                  width: "90%",
-                  backgroundColor: "var(--bg-card)",
-                  border: "2px solid var(--primary)",
-                }}
-              >
-                <h2 style={{ textAlign: "center", marginBottom: "2rem" }}>
-                  🏁 Race Results
-                </h2>
-
-                <div style={{ marginBottom: "2rem" }}>
-                  {sortedPlayers.map((player, index) => (
-                    <div
-                      key={player.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "1rem",
-                        marginBottom: "0.5rem",
-                        backgroundColor:
-                          player.user.uid === currentUser?.uid
-                            ? "var(--bg-secondary)"
-                            : "var(--bg-primary)",
-                        border: "1px solid var(--border-primary)",
-                        borderRadius: "8px",
-                        borderLeft: `4px solid ${getPositionColor(
-                          player.position || index + 1
-                        )}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1">
-                          {getPositionIcon(player.position || index + 1)}
-                          <span
-                            style={{
-                              fontWeight: "600",
-                              color: getPositionColor(
-                                player.position || index + 1
-                              ),
-                            }}
-                          >
-                            #{player.position || index + 1}
-                          </span>
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: "500" }}>
-                            {player.user.displayName || player.user.email}
-                            {player.user.uid === currentUser?.uid && (
-                              <span
-                                style={{
-                                  marginLeft: "0.5rem",
-                                  fontSize: "0.75rem",
-                                  backgroundColor: "var(--primary)",
-                                  color: "white",
-                                  padding: "0.25rem 0.5rem",
-                                  borderRadius: "12px",
-                                }}
-                              >
-                                You
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-muted">
-                            {player.finished
-                              ? "Finished"
-                              : `${Math.round(player.progress)}% complete`}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: "500" }}>
-                          {player.wpm} WPM
-                        </div>
-                        <div className="text-sm text-muted">
-                          {player.accuracy}% accuracy
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ textAlign: "center" }}>
-                  <button onClick={resetGame} className="primary">
-                    <RotateCcw size={16} />
-                    Play Again
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -522,6 +500,20 @@ export default function MultiplayerRoom({ roomId }) {
           </div>
         </div>
       )}
+
+      {/* Results Modal */}
+      <MultiplayerResultsModal
+        isOpen={showResultsModal}
+        onClose={() => {
+          setShowResultsModal(false);
+          if (gameState === "finished") {
+            resetGame();
+          }
+        }}
+        players={rankedPlayers}
+        currentUser={currentUser}
+        onPlayAgain={resetGame}
+      />
     </div>
   );
 }

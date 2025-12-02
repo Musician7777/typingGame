@@ -77,6 +77,7 @@ export default function ThemeSelector() {
               minWidth: "200px",
               maxHeight: "300px",
               overflowY: "auto",
+              overflowX: "hidden",
             }}
           >
             {themes.map((theme) => (

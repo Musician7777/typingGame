@@ -109,7 +109,7 @@ function generateWords(count = 50) {
 }
 
 function calculateWPM(charactersTyped, timeElapsed) {
-  if (timeElapsed === 0) return 0;
+  if (timeElapsed === 0 || timeElapsed < 1) return 0;
   return Math.round(charactersTyped / 5 / (timeElapsed / 60));
 }
 
@@ -167,6 +167,7 @@ io.on("connection", (socket) => {
       accuracy: 100,
       finished: false,
       position: null,
+      timeTaken: null,
     };
 
     userSockets.set(socket.id, { roomId, user });
@@ -225,20 +226,44 @@ io.on("connection", (socket) => {
 
       if (finished && !player.finished) {
         player.finished = true;
+        const timeTaken = (Date.now() - room.startTime) / 1000;
+        player.timeTaken = timeTaken;
 
-        // Calculate position
+        // Calculate position based on finish time
         const finishedPlayers = Object.values(room.players).filter(
           (p) => p.finished
-        ).length;
-        player.position = finishedPlayers;
+        );
+        player.position = finishedPlayers.length;
+
+        // Check if all players finished
+        const finishedPlayersArray = Object.values(room.players).filter(
+          (p) => p.finished
+        );
+
+        // If this is the first player to finish, start a countdown timer
+        if (finishedPlayersArray.length === 1) {
+          room.finishTimer = setTimeout(() => {
+            console.log(`Game finish timer expired for room ${roomId}`);
+            room.gameState = "finished";
+            io.to(roomId).emit("game-finished", {
+              players: Object.values(room.players),
+            });
+          }, 30000); // 30 seconds
+        }
 
         // Check if all players finished
         const allFinished = Object.values(room.players).every(
           (p) => p.finished
         );
         if (allFinished) {
+          if (room.finishTimer) {
+            clearTimeout(room.finishTimer);
+            room.finishTimer = null;
+          }
           room.gameState = "finished";
-          io.to(roomId).emit("game-finished");
+          io.to(roomId).emit("game-finished", {
+            players: Object.values(room.players),
+          });
         }
 
         io.to(roomId).emit("player-finished", {
@@ -246,8 +271,42 @@ io.on("connection", (socket) => {
           position: player.position,
           wpm: player.wpm,
           accuracy: player.accuracy,
+          timeTaken: player.timeTaken,
         });
       }
+
+      // Calculate temporary rankings based on progress and WPM for ongoing game
+      const playerArray = Object.values(room.players);
+      const sortedByProgress = [...playerArray].sort((a, b) => {
+        if (a.finished && b.finished) {
+          return a.position - b.position;
+        }
+        if (a.finished) return -1;
+        if (b.finished) return 1;
+
+        if (a.progress !== b.progress) {
+          return b.progress - a.progress;
+        }
+        return b.wpm - a.wpm;
+      });
+
+      // Assign temporary positions for display during game
+      sortedByProgress.forEach((player, index) => {
+        player.temporaryPosition = index + 1;
+      });
+
+      console.log(
+        "Room",
+        roomId,
+        "temporary positions:",
+        sortedByProgress.map((p) => ({
+          name: p.user.displayName || p.user.email,
+          progress: p.progress,
+          wpm: p.wpm,
+          temporaryPosition: p.temporaryPosition,
+          finished: p.finished,
+        }))
+      );
 
       // Send updated progress to all players in room
       io.to(roomId).emit("players-progress", {
@@ -260,6 +319,11 @@ io.on("connection", (socket) => {
     const room = rooms.get(roomId);
     if (!room) return;
 
+    if (room.finishTimer) {
+      clearTimeout(room.finishTimer);
+      room.finishTimer = null;
+    }
+
     room.gameState = "waiting";
     room.startTime = null;
     room.text = generateWords(parseInt(process.env.DEFAULT_WORD_COUNT) || 50);
@@ -271,6 +335,7 @@ io.on("connection", (socket) => {
       player.accuracy = 100;
       player.finished = false;
       player.position = null;
+      player.temporaryPosition = null;
     });
 
     io.to(roomId).emit("game-reset", {
@@ -294,6 +359,10 @@ io.on("connection", (socket) => {
 
         // Delete room if empty
         if (Object.keys(room.players).length === 0) {
+          if (room.finishTimer) {
+            clearTimeout(room.finishTimer);
+            room.finishTimer = null;
+          }
           rooms.delete(roomId);
           console.log(`Room ${roomId} deleted`);
         } else {
@@ -343,7 +412,7 @@ app.post("/api/room", (req, res) => {
   res.json({ success: true, roomId });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
